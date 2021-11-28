@@ -1,0 +1,14 @@
+[Unit]
+Description=Namecheap DDNS Service
+Documentation=https://github.com/jewzaam/namecheap-ddns-exporter/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=pi
+Restart=on-failure
+WorkingDirectory=$WORKING_DIR/namecheap-ddns-exporter
+ExecStart=python $WORKING_DIR/namecheap-ddns-exporter --port $PORT --config $CONFIG
+
+[Install]
+WantedBy=multi-user.target
