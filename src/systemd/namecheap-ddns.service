@@ -7,8 +7,8 @@ After=network-online.target
 [Service]
 User=pi
 Restart=on-failure
-WorkingDirectory=$WORKING_DIR/namecheap-ddns-exporter
-ExecStart=python $WORKING_DIR/namecheap-ddns-exporter --port $PORT --config $CONFIG
+WorkingDirectory=$REPO_BASE_DIR
+ExecStart=python $REPO_BASE_DIR/src/py/namecheap-ddns-exporter.py --port $PORT --config $CONFIG
 
 [Install]
 WantedBy=multi-user.target

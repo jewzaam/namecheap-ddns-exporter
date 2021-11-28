@@ -3,6 +3,11 @@ Simple ddns with namecheap and export metrics for it.
 
 # Setup
 
+Make sure you have required software:
+* python
+* pip
+* git
+
 ## Clone Source
 
 I am running on ec2 and simply clone into the ec2-user's home directory.
@@ -32,18 +37,24 @@ ip_source: <URL to fetch IP address>
 - http://169.254.169.254/latest/meta-data/public-ipv4 for AWS specifically
 - https://api.ipify.org for generic query
 
+## Python requirements
+
+```shell
+pip install -r requirements.txt --user
+```
+
 ## Linux Service
 
 Install the service by setting up some env vars then copying the systemd template with those vars, start the service, and enable the service.
 
 ```shell
-export WORKING_DIR=~/namecheap-ddns-exporter
+export REPO_BASE_DIR=~/namecheap-ddns-exporter
 export PORT=8004
-export CONFIG=~/namecheap-ddns-exporter/config.yaml
+export CONFIG=$REPO_BASE_DIR/config.yaml
 
-sudo cat $WORKING_DIR/src/systemd/namecheap-ddns.service | envsubst > /etc/systemd/system/namecheap-ddns.service
+sudo cat $REPO_BASE_DIR/src/systemd/namecheap-ddns.service | envsubst > /etc/systemd/system/namecheap-ddns.service
 
-unset WORKING_DIR
+unset REPO_BASE_DIR
 unset PORT
 unset CONFIG
 
