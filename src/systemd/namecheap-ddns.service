@@ -8,7 +8,7 @@ After=network-online.target
 User=$USER
 Restart=on-failure
 WorkingDirectory=$REPO_BASE_DIR
-ExecStart=$(which python) $REPO_BASE_DIR/src/py/namecheap-ddns-exporter.py --port $PORT --config $CONFIG
+ExecStart=$PYTHON $REPO_BASE_DIR/src/py/namecheap-ddns-exporter.py --port $PORT --config $CONFIG
 
 [Install]
 WantedBy=multi-user.target
