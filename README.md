@@ -51,13 +51,17 @@ Install the service by setting up some env vars then copying the systemd templat
 export REPO_BASE_DIR=~/namecheap-ddns-exporter
 export PORT=8004
 export CONFIG=$REPO_BASE_DIR/config.yaml
+export PYTHON=$(which python)
 
-sudo cat $REPO_BASE_DIR/src/systemd/namecheap-ddns.service | envsubst > /etc/systemd/system/namecheap-ddns.service
+cat $REPO_BASE_DIR/src/systemd/namecheap-ddns.service | envsubst > /tmp/namecheap-ddns.service
+sudo mv /tmp/namecheap-ddns.service /etc/systemd/system/namecheap-ddns.service
 
 unset REPO_BASE_DIR
 unset PORT
 unset CONFIG
+unset PYTHON
 
+sudo systemctl daemon-reload
 sudo systemctl start namecheap-ddns.service
 sudo systemctl enable namecheap-ddns.service
 ```
