@@ -1,5 +1,4 @@
 argparse
 pyyaml
-httpimport
 requests
-prometheus-client
+metrics-utility @ git+https://github.com/jewzaam/metrics-utility.git@v0.1.0
