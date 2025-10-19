@@ -4,10 +4,7 @@ import requests
 import yaml
 import time
 
-import httpimport
-
-with httpimport.github_repo('jewzaam', 'metrics-utility', 'utility', 'main'):
-    import utility
+import metrics_utility
 
 last_ip=""
 
@@ -42,7 +39,7 @@ def updateDDNS(config):
         # then treat this as a "pass" so we can then export the metric
         pass
 
-    utility.inc("ddns_setup_total",labels)
+    metrics_utility.inc("ddns_setup_total",labels)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Keep Namecheap DDNS up to date.")
@@ -52,7 +49,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # Start up the server to expose the metrics.
-    utility.metrics(args.port)
+    metrics_utility.metrics(args.port)
 
     while True:
         config = {}
