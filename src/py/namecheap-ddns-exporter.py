@@ -54,6 +54,6 @@ if __name__ == '__main__':
     while True:
         config = {}
         with open(args.config, 'r') as f:
-            config =  yaml.load(f)
+            config =  yaml.safe_load(f)
         updateDDNS(config)
         time.sleep(config['refresh_delay_seconds'])
