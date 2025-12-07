@@ -26,10 +26,19 @@ def updateDDNS(config):
 
     try:
         if ip != last_ip:
+            print(f"[UPDATE] IP address changed: {last_ip} -> {ip}")
+            print(f"[UPDATE] Updating DDNS for {host}.{domain}...")
             response = requests.get("https://dynamicdns.park-your-domain.com/update?host={}&domain={}&ip={}&password={}".format(host,domain,ip,password))
             status_code = response.status_code
             labels['type']="update"
             labels['status']=str(status_code)
+            print(f"[UPDATE] DDNS update response: HTTP {status_code}")
+            if status_code == 200:
+                print(f"[UPDATE] Successfully updated A record to {ip}")
+            else:
+                print(f"[UPDATE] Warning: Unexpected status code {status_code}")
+        else:
+            print(f"[SKIP] IP address unchanged ({ip}), skipping DDNS update")
 
         last_ip = ip
     except Exception as e:
