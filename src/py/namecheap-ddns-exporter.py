@@ -3,6 +3,7 @@ import socket
 import requests
 import yaml
 import time
+import xml.etree.ElementTree as ET
 
 import metrics_utility
 
@@ -28,22 +29,65 @@ def updateDDNS(config):
         if ip != last_ip:
             print(f"[UPDATE] IP address changed: {last_ip} -> {ip}")
             print(f"[UPDATE] Updating DDNS for {host}.{domain}...")
-            url = "https://dynamicdns.park-your-domain.com/update?host={}&domain={}&ip={}&password={}".format(host,domain,ip,password)
-            print(f"[UPDATE] Calling API: https://dynamicdns.park-your-domain.com/update?host={host}&domain={domain}&ip={ip}&password=***")
+            # Note: host and domain must match exact case as shown in Namecheap account
+            # Match documentation order: host, domain, password, ip
+            url = "https://dynamicdns.park-your-domain.com/update?host={}&domain={}&password={}&ip={}".format(host,domain,password,ip)
+            print(f"[UPDATE] Calling API: https://dynamicdns.park-your-domain.com/update?host={host}&domain={domain}&password=***&ip={ip}")
             response = requests.get(url)
             status_code = response.status_code
+            # Handle UTF-16 encoding as specified in XML response
             response_text = response.text.strip()
             labels['type']="update"
             labels['status']=str(status_code)
             print(f"[UPDATE] DDNS update response: HTTP {status_code}")
             print(f"[UPDATE] Response body: {response_text}")
             if status_code == 200:
-                if "success" in response_text.lower() or "ok" in response_text.lower():
-                    print(f"[UPDATE] Successfully updated A record to {ip}")
-                else:
-                    print(f"[UPDATE] Warning: HTTP 200 but response indicates failure: {response_text}")
+                # Parse XML response to check for success
+                try:
+                    # Handle UTF-16 encoding if present
+                    if response_text.startswith('<?xml'):
+                        root = ET.fromstring(response_text)
+                    else:
+                        # Try to decode if needed
+                        root = ET.fromstring(response_text)
+                    
+                    err_count = root.find('ErrCount')
+                    done = root.find('Done')
+                    errors = root.find('errors')
+                    response_ip = root.find('IP')
+                    
+                    err_count_val = int(err_count.text) if err_count is not None and err_count.text else -1
+                    done_val = done.text.lower() == 'true' if done is not None and done.text else False
+                    returned_ip = response_ip.text if response_ip is not None and response_ip.text else None
+                    
+                    if err_count_val == 0 and done_val:
+                        print(f"[UPDATE] API reported success - ErrCount: {err_count_val}, Done: {done_val}")
+                        if returned_ip:
+                            print(f"[UPDATE] API returned IP: {returned_ip}")
+                        # Verify DNS update by resolving the hostname
+                        try:
+                            fqdn = f"{host}.{domain}" if host != "@" else domain
+                            resolved_ip = socket.gethostbyname(fqdn)
+                            print(f"[UPDATE] DNS verification: {fqdn} resolves to {resolved_ip}")
+                            if resolved_ip == ip:
+                                print(f"[UPDATE] ✓ Successfully updated A record - DNS verified: {fqdn} -> {ip}")
+                            else:
+                                print(f"[UPDATE] ⚠ Warning: DNS shows {resolved_ip} but expected {ip}. Update may be propagating or failed.")
+                        except socket.gaierror as dns_err:
+                            print(f"[UPDATE] ⚠ Warning: Could not verify DNS update: {dns_err}")
+                    else:
+                        error_msgs = []
+                        if errors is not None and len(errors) > 0:
+                            for error in errors:
+                                error_msgs.append(error.text if error.text else str(error))
+                        print(f"[UPDATE] ✗ Update failed - ErrCount: {err_count_val}, Done: {done_val}")
+                        if error_msgs:
+                            print(f"[UPDATE] Errors: {', '.join(error_msgs)}")
+                except ET.ParseError as e:
+                    print(f"[UPDATE] ✗ Warning: Failed to parse XML response: {e}")
+                    print(f"[UPDATE] Raw response: {response_text}")
             else:
-                print(f"[UPDATE] Warning: Unexpected status code {status_code}")
+                print(f"[UPDATE] ✗ Warning: Unexpected status code {status_code}")
         else:
             print(f"[SKIP] IP address unchanged ({ip}), skipping DDNS update")
 
