@@ -17,7 +17,7 @@ def updateDDNS(config):
     if ip_source == "local":
         ip=socket.gethostbyname(socket.gethostname())
     else:
-        ip=requests.get(ip_source).content
+        ip=requests.get(ip_source).text.strip()
 
     labels = {
         'type': "skip",
@@ -28,13 +28,20 @@ def updateDDNS(config):
         if ip != last_ip:
             print(f"[UPDATE] IP address changed: {last_ip} -> {ip}")
             print(f"[UPDATE] Updating DDNS for {host}.{domain}...")
-            response = requests.get("https://dynamicdns.park-your-domain.com/update?host={}&domain={}&ip={}&password={}".format(host,domain,ip,password))
+            url = "https://dynamicdns.park-your-domain.com/update?host={}&domain={}&ip={}&password={}".format(host,domain,ip,password)
+            print(f"[UPDATE] Calling API: https://dynamicdns.park-your-domain.com/update?host={host}&domain={domain}&ip={ip}&password=***")
+            response = requests.get(url)
             status_code = response.status_code
+            response_text = response.text.strip()
             labels['type']="update"
             labels['status']=str(status_code)
             print(f"[UPDATE] DDNS update response: HTTP {status_code}")
+            print(f"[UPDATE] Response body: {response_text}")
             if status_code == 200:
-                print(f"[UPDATE] Successfully updated A record to {ip}")
+                if "success" in response_text.lower() or "ok" in response_text.lower():
+                    print(f"[UPDATE] Successfully updated A record to {ip}")
+                else:
+                    print(f"[UPDATE] Warning: HTTP 200 but response indicates failure: {response_text}")
             else:
                 print(f"[UPDATE] Warning: Unexpected status code {status_code}")
         else:
